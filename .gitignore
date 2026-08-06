@@ -1,0 +1,22 @@
+# Dependencias de React
+node_modules/
+build/
+dist/
+
+# Entorno virtual y caché de Flask (Python)
+venv/
+env/
+__pycache__/
+*.pyc
+instance/
+
+# Variables de entorno (¡nunca subas contraseñas o credenciales locales!)
+.env
+
+# XAMPP / Base de datos (ignorar respaldos de BD locales)
+*.sql
+*.sqlite3
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db

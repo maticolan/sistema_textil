@@ -110,6 +110,8 @@ function App() {
 
   const [listaLotes, setListaLotes] = useState([]);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -120,7 +122,7 @@ function App() {
 
   const fetchUsuarios = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/usuarios');
+      const response = await fetch(`${API_URL}/usuarios`);
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaUsuarios(datos.usuarios);
@@ -140,7 +142,7 @@ function App() {
     e.preventDefault();
     setMensaje("Cargando...");
     try {
-      const response = await fetch('http://127.0.0.1:5000/login', {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: usuario, password: contrasena }),
@@ -165,8 +167,8 @@ function App() {
     setMensajeRegistro("Guardando...");
 
     const url = modoEdicion 
-    ? `http://127.0.0.1:5000/usuarios/${idEdicion}`
-    : 'http://127.0.0.1:5000/usuarios';
+    ? `${API_URL}/usuarios/${idEdicion}`
+    : `${API_URL}/usuarios`;
     const method = modoEdicion ? 'PUT' : 'POST';
 
     try {
@@ -211,7 +213,7 @@ function App() {
   const handleEliminarUsuario = async (userId) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta trabajadora?")) {
       try {
-        const response = await fetch(`http://127.0.0.1:5000/usuarios/${userId}`, {
+        const response = await fetch(`${API_URL}/usuarios/${userId}`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -231,7 +233,7 @@ function App() {
 
   const fetchAreas = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/areas');
+      const response = await fetch(`${API_URL}/areas`);
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaAreas(datos.areas); 
@@ -243,7 +245,7 @@ function App() {
 
   const fetchTiposPrenda = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/tipos_prendas'); 
+      const response = await fetch(`${API_URL}/tipos_prendas`); 
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaTiposPrenda(datos.tipos_prendas);
@@ -255,7 +257,7 @@ function App() {
 
   const fetchModelosPrenda = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/modelos_prendas');
+      const response = await fetch(`${API_URL}/modelos_prendas`);
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaModelosPrenda(datos.modelos_prendas);
@@ -267,7 +269,7 @@ function App() {
 
   const fetchCombinacionesPrenda = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/combinaciones_prendas');
+      const response = await fetch(`${API_URL}/combinaciones_prendas`);
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaCombinacionesPrenda(datos.combinaciones_prendas);
@@ -299,7 +301,7 @@ useEffect(() => {
     setMensajeArea("Guardando...");
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/areas', {
+      const response = await fetch(`${API_URL}/areas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: nuevaArea }), 
@@ -322,7 +324,7 @@ useEffect(() => {
     setMensajeTipoPrenda("Guardando...");
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/tipos_prendas', {
+      const response = await fetch(`${API_URL}/tipos_prendas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: nuevoTipoNombre, cod_prefijo: nuevoTipoPrefijo }),
@@ -346,7 +348,7 @@ useEffect(() => {
     setMensajeModeloPrenda("Guardando...");
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/modelos_prendas', {
+      const response = await fetch(`${API_URL}/modelos_prendas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre: nuevoModeloNombre, tipo_id: nuevoModeloTipoId }),
@@ -370,7 +372,7 @@ useEffect(() => {
     setMensajeCombinacionPrenda("Guardando...");
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/combinaciones_prendas', {
+      const response = await fetch(`${API_URL}/combinaciones_prendas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -394,7 +396,7 @@ useEffect(() => {
 
   const fetchLotesActivos = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/lotes_activos');
+      const response = await fetch('${API_URL}/lotes_activos');
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaLotes(datos.lotes_activos);
@@ -422,7 +424,7 @@ useEffect(() => {
     const esRemetido = esTejido && tipoTejido === 'remetido';
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/registro_produccion', {
+      const response = await fetch('${API_URL}/registro_produccion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -463,7 +465,7 @@ useEffect(() => {
 
   const fetchDashboard = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/dashboard');
+      const response = await fetch('${API_URL}/dashboard');
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setDatosDashboard(datos.data);
@@ -475,7 +477,7 @@ useEffect(() => {
 
   const fetchOrdenesAnuales = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:5000/orden_activa_detalle');
+      const response = await fetch('${API_URL}/orden_activa_detalle');
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaOrdenesAnuales(datos.detalles_orden);
@@ -501,7 +503,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/orden_activa_detalle', {
+      const response = await fetch('${API_URL}/orden_activa_detalle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orden_id: ordenSeleccionada, metas: metasValidas }), 

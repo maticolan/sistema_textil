@@ -562,50 +562,47 @@ def registrar_produccion():
         combinacion_id = data.get('combinacion_id')
         area_id = data.get('area_id')
         user_id = data.get('user_id')
-        cantidad_aprob = data.get('cantidad_aprob')
+        cantidad_aprob = data.get('cantidad_aprob', 0)
         cantidad_recha = data.get('cantidad_recha', 0)
+        es_remetido = data.get('es_remetido', False)
 
         conn = get_db_connection()
         if conn and conn.is_connected():
             cursor = conn.cursor()
             
-            # Identificamos si el área actual es Tejido para auto-generar la tarjeta
+            # Verificar si el área es Tejido
             cursor.execute("SELECT nombre FROM area WHERE area_id = %s", (area_id,))
             area_row = cursor.fetchone()
             es_tejido = area_row and 'tejido' in area_row[0].lower()
 
-            # Lógica dinámica para el número de tarjeta
+            # Autogenerar número de tarjeta para tejido si no viene especificado
             if not numero_tarjeta:
                 if es_tejido:
-                    # Generamos un código automático basado en el tiempo (Ej. T-1706214561)
                     numero_tarjeta = f"T-{int(time.time())}"
                 else:
-                    # Si no es tejido, obligamos a que escriban el código
                     return jsonify({
                         "estado": "error",
                         "mensaje": "El número de tarjeta es obligatorio para esta área"
                     }), 400
 
-            # 1. Verificamos si la tarjeta (lote) ya existe buscando por el 'codigo'
+            # 1. Verificar o crear el lote
             cursor.execute("SELECT lote_id FROM lote WHERE codigo = %s", (numero_tarjeta,))
             lote_existente = cursor.fetchone()
 
             if lote_existente:
                 lote_id = lote_existente[0]
             else:
-                # 1. Busca la orden activa
                 cursor.execute("SELECT orden_id FROM orden_produccion WHERE estado = 'Activo' LIMIT 1")
                 orden_info = cursor.fetchone()
                 orden_activa_id = orden_info[0] if orden_info else 1
 
-                # 2. Si NO existe, creamos el lote incluyendo el orden_id activo
                 cursor.execute("""
                     INSERT INTO lote (orden_id, combina_id, cantidad_solici, cantidad_despa, codigo, estado) 
                     VALUES (%s, %s, 0, 0, %s, 'Activo')
                 """, (orden_activa_id, combinacion_id, numero_tarjeta))
                 lote_id = cursor.lastrowid
 
-            # 2. Insertamos la producción
+            # 2. Insertar el registro de producción
             cursor.execute("""
                 INSERT INTO registro_prod (lote_id, area_id, user_id, fecha_hora, cantidad_aprob, cantidad_recha) 
                 VALUES (%s, %s, %s, NOW(), %s, %s)
@@ -613,9 +610,11 @@ def registrar_produccion():
             
             conn.commit()
             
+            mensaje_exito = f"Remetido registrado (Tarjeta: {numero_tarjeta})" if es_remetido else f"Producción registrada: {cantidad_aprob} un. (Tarjeta: {numero_tarjeta})"
+            
             return jsonify({
                 "estado": "exito",
-                "mensaje": f"Producción registrada (Lote/Tarjeta: {numero_tarjeta})"
+                "mensaje": mensaje_exito
             }), 200
 
     except Exception as e:
@@ -773,37 +772,30 @@ def obtener_ordenes_anuales():
 def crear_detalle_orden():
     data = request.get_json()
     metas = data.get('metas') 
+    orden_id = data.get('orden_id') # <--- RECIBIMOS EL ID DE LA ORDEN
 
     if not metas or not isinstance(metas, list):
         return jsonify({"estado": "error", "mensaje": "Se requiere una lista de metas válida"}), 400
+    
+    if not orden_id:
+        return jsonify({"estado": "error", "mensaje": "Debe seleccionar una orden activa"}), 400
     
     conn = get_db_connection()
     if conn and conn.is_connected():
         cursor = conn.cursor(dictionary=True)
         try:
-            # 1. Obtener la orden activa
-            cursor.execute("SELECT orden_id FROM orden_produccion WHERE estado = 'Activo' LIMIT 1")
-            orden_activa = cursor.fetchone()
-            
-            if not orden_activa:
-                return jsonify({"estado": "error", "mensaje": "No hay una orden de producción activa"}), 400
-                
-            orden_id = orden_activa['orden_id']
-
-            # 2. Procesar las metas guardándolas en "lote"
+            # 2. Procesar las metas guardándolas en "lote" asociadas a la orden elegida
             for meta in metas:
                 comb_id = meta.get('combinacion_id')
                 cantidad = meta.get('cantidad')
                 if comb_id and cantidad:
-                    # Buscamos si ya existe la meta para actualizarla
                     cursor.execute("SELECT lote_id FROM lote WHERE orden_id = %s AND combina_id = %s", (orden_id, comb_id))
                     lote_existente = cursor.fetchone()
                     
                     if lote_existente:
                         cursor.execute("UPDATE lote SET cantidad_solici = %s WHERE lote_id = %s", (cantidad, lote_existente['lote_id']))
                     else:
-                        # Insertamos un código genérico visible para las metas maestras
-                        codigo_meta = f"META-C{comb_id}"
+                        codigo_meta = f"META-O{orden_id}-C{comb_id}"
                         cursor.execute("""
                             INSERT INTO lote (orden_id, combina_id, cantidad_solici, cantidad_despa, codigo, estado) 
                             VALUES (%s, %s, %s, 0, %s, 'Activo')
@@ -826,28 +818,28 @@ def obtener_detalles_orden():
     if conn and conn.is_connected():
         cursor = conn.cursor(dictionary=True)
         try:
-            # 1. Obtener los datos generales de la orden activa
-            cursor.execute("SELECT orden_id, numero_orden, anio FROM orden_produccion WHERE estado = 'Activo' LIMIT 1")
-            orden_info = cursor.fetchone()
+            # 1. Obtener TODAS las órdenes activas (removido el LIMIT 1)
+            cursor.execute("SELECT orden_id, numero_orden, anio FROM orden_produccion WHERE estado = 'Activo'")
+            ordenes_info = cursor.fetchall()
 
-            if not orden_info:
-                return jsonify({"estado": "error", "mensaje": "No hay orden activa"}), 404
+            if not ordenes_info:
+                return jsonify({"estado": "error", "mensaje": "No hay órdenes activas"}), 404
 
-            # 2. Obtener los detalles (metas) usando la tabla lote
+            # 2. Obtener los detalles de todas las órdenes activas
             query = """
-                SELECT op.numero_orden, op.anio, l.cantidad_solici AS cantidad, c.nombre AS combinacion_nombre
+                SELECT op.orden_id, op.numero_orden, op.anio, l.cantidad_solici AS cantidad, c.nombre AS combinacion_nombre
                 FROM lote l
                 JOIN orden_produccion op ON l.orden_id = op.orden_id
                 JOIN combinacion_prenda c ON l.combina_id = c.combina_id
                 WHERE op.estado = 'Activo'
-                ORDER BY c.nombre ASC
+                ORDER BY op.numero_orden ASC, c.nombre ASC
             """
             cursor.execute(query)
             detalles = cursor.fetchall()
             
             return jsonify({
                 "estado": "exito", 
-                "orden_activa": orden_info,
+                "ordenes_activas": ordenes_info,
                 "detalles_orden": detalles
             })
         except Exception as e:

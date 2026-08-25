@@ -86,7 +86,8 @@ function App() {
   };
 
   const [listaOrdenesAnuales, setListaOrdenesAnuales] = useState([]);
-  const [ordenActivaInfo, setOrdenActivaInfo] = useState(null);
+  const [listaOrdenesActivas, setListaOrdenesActivas] = useState([]);
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState('');
 
  // === ESTADOS TRABAJADORA: WIZARD (PASO A PASO) ===
   const [pasoTrabajadora, setPasoTrabajadora] = useState(0); // Cambiado a 0 para que primero escoja el área
@@ -101,6 +102,8 @@ function App() {
   const [trabAprobadas, setTrabAprobadas] = useState('');
   const [trabRechazadas, setTrabRechazadas] = useState('');
   const [mensajeProduccion, setMensajeProduccion] = useState('');
+
+  const [tipoTejido, setTipoTejido] = useState('prendas');
 
   // ESTADO RESPONSIVE
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -407,21 +410,28 @@ useEffect(() => {
     setNumeroTarjeta('');
     setCantidadAcabadaTotal(''); // Limpiamos el nuevo estado
     setTrabAprobadas(''); setTrabRechazadas('');
+    setTipoTejido('prendas');
     setMensajeProduccion('');
   }
 
   const handleGuardarProduccion = async (e) => {
     e.preventDefault();
     setMensajeProduccion("Guardando...");
+    
+    const esTejido = trabArea?.nombre.toLowerCase() === 'tejido';
+    const esRemetido = esTejido && tipoTejido === 'remetido';
+
     try {
       const response = await fetch('http://127.0.0.1:5000/registro_produccion', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          numero_tarjeta: numeroTarjeta, // NUEVO: Enviamos el número de tarjeta
+          numero_tarjeta: numeroTarjeta,
           combinacion_id: trabCombinacion.combinacion_id, 
           area_id: trabArea.area_id,
           user_id: userActivoId, 
-          cantidad_aprob: trabAprobadas,
+          es_remetido: esRemetido,
+          cantidad_aprob: esRemetido ? 0 : Number(trabAprobadas),
           cantidad_recha: trabRechazadas || 0
         }),
       });
@@ -429,8 +439,12 @@ useEffect(() => {
       if (datos.estado === 'exito') {
         setMensajeProduccion("✅ " + datos.mensaje);
         setTimeout(() => { reiniciarWizard(); }, 2000);
-      } else { setMensajeProduccion("❌ " + datos.mensaje); }
-    } catch (error) { setMensajeProduccion('❌ Error al conectar con el servidor'); }
+      } else { 
+        setMensajeProduccion("❌ " + datos.mensaje); 
+      }
+    } catch (error) { 
+      setMensajeProduccion('❌ Error al conectar con el servidor'); 
+    }
   };
 
   useEffect(() => {
@@ -465,7 +479,10 @@ useEffect(() => {
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaOrdenesAnuales(datos.detalles_orden);
-        setOrdenActivaInfo(datos.orden_activa);
+        setListaOrdenesActivas(datos.ordenes_activas);
+        if (datos.ordenes_activas && datos.ordenes_activas.length > 0) {
+          setOrdenSeleccionada(datos.ordenes_activas[0].orden_id);
+        }
       }
     } catch (error) {
       console.error('Error al obtener los detalles de la orden:', error);
@@ -476,7 +493,6 @@ useEffect(() => {
     e.preventDefault();
     setMensajeOrdenAnual("Guardando...");
 
-    // Filtramos para enviar solo aquellas filas que tengan ambos campos llenos
     const metasValidas = metasOrden.filter(m => m.combinacion_id !== '' && m.cantidad !== '');
     
     if (metasValidas.length === 0) {
@@ -488,13 +504,13 @@ useEffect(() => {
       const response = await fetch('http://127.0.0.1:5000/orden_activa_detalle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metas: metasValidas }), // Enviamos el arreglo
+        body: JSON.stringify({ orden_id: ordenSeleccionada, metas: metasValidas }), 
       });
       const datos = await response.json();
       
       if (datos.estado === 'exito') {
         setMensajeOrdenAnual("✅ " + datos.mensaje);
-        setMetasOrden([{ combinacion_id: '', cantidad: '' }]); // Reseteamos el formulario a 1 fila
+        setMetasOrden([{ combinacion_id: '', cantidad: '' }]);
         fetchOrdenesAnuales();
       } else {
         setMensajeOrdenAnual("❌ " + datos.mensaje);
@@ -873,9 +889,16 @@ useEffect(() => {
             <>
             <div style={{ backgroundColor: TEMA.card, padding: isMobile ? '20px' : '35px', borderRadius: '14px', boxShadow: '0 4px 15px rgba(43, 35, 37, 0.04)', border: `1px solid ${TEMA.border}`, marginBottom: '25px' }}>
               <h3 style={{ color: TEMA.primary, marginTop: 0, marginBottom: '5px', fontSize: '20px' }}>📋 Asignación de Metas</h3>
-              <p style={{ color: TEMA.subtext, fontSize: '15px', marginBottom: '20px', fontWeight: 'bold' }}>
-                Orden Activa: #{ordenActivaInfo ? ordenActivaInfo.numero_orden : 'Cargando...'} (Año {ordenActivaInfo ? ordenActivaInfo.anio : '...'})
-              </p>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ color: TEMA.subtext, fontSize: '15px', fontWeight: 'bold', marginRight: '10px' }}>Seleccionar Orden Activa:</label>
+                <select value={ordenSeleccionada} onChange={(e) => setOrdenSeleccionada(e.target.value)} style={{ padding: '8px', borderRadius: '8px', border: `1px solid ${TEMA.border}`, backgroundColor: TEMA.card, color: TEMA.text }}>
+                  {listaOrdenesActivas.map(orden => (
+                    <option key={orden.orden_id} value={orden.orden_id}>
+                      Orden #{orden.numero_orden} (Año {orden.anio})
+                    </option>
+                  ))}
+                </select>
+              </div>
               
               <form onSubmit={handleGuardarOrdenAnual}>
                 {metasOrden.map((meta, index) => (
@@ -925,7 +948,7 @@ useEffect(() => {
           {/* TABLA DE METAS */}
           <div style={{ backgroundColor: TEMA.card, padding: isMobile ? '20px' : '35px', borderRadius: '14px', boxShadow: '0 4px 15px rgba(43, 35, 37, 0.04)', border: `1px solid ${TEMA.border}` }}>
             <h3 style={{ color: TEMA.primary, marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>
-              📊 Detalles de la Orden #{ordenActivaInfo ? ordenActivaInfo.numero_orden : '...'}
+              📊 Detalles de Metas Asignadas
             </h3>
             
             <div style={{ overflowX: 'auto', width: '100%' }}>
@@ -1050,7 +1073,7 @@ useEffect(() => {
                       <h3 style={{ color: TEMA.primary, margin: 0, fontSize: '20px' }}>📝 Registrar Avance</h3>
                       {pasoTrabajadora > 0 && (
                         <span style={{ backgroundColor: TEMA.bg, color: TEMA.subtext, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>
-                          Paso {pasoTrabajadora} de {esTejido ? '5' : '6'}
+                          Paso {pasoTrabajadora} de {esTejido ? '4' : '6'}
                         </span>
                       )}
                     </div>
@@ -1063,7 +1086,6 @@ useEffect(() => {
                          {trabTipo && <><span style={{ margin: '0 5px' }}>|</span><span style={{ fontWeight: 'bold' }}>Tipo:</span> {trabTipo.cod_prefijo}</>}
                          {trabModelo && <><span style={{ margin: '0 5px' }}>|</span><span style={{ fontWeight: 'bold' }}>Modelo:</span> {trabModelo.modelo_nombre}</>}
                          {trabCombinacion && <><span style={{ margin: '0 5px' }}>|</span><span style={{ fontWeight: 'bold' }}>Comb:</span> {trabCombinacion.nombre}</>}
-                         {numeroTarjeta && esTejido && <><span style={{ margin: '0 5px' }}>|</span><span style={{ fontWeight: 'bold' }}>Tarjeta:</span> {numeroTarjeta}</>}
                          <button onClick={reiniciarWizard} style={{ marginLeft: 'auto', backgroundColor: TEMA.warningText, color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>Reiniciar Todo</button>
                       </div>
                     )}
@@ -1174,18 +1196,87 @@ useEffect(() => {
                       </div>
                     )}
 
-                    {/* PASO 4: TEJIDO (Tarjeta) | ACABADO (Combinación) */}
+                    {/* PASO 4: TEJIDO (Cantidad y Fin) | ACABADO (Combinación) */}
                     {pasoTrabajadora === 4 && (
                       <div>
                         {esTejido ? (
-                          <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-                            <h4 style={{ textAlign: 'center', marginBottom: '20px', color: TEMA.text }}>4. Ingresa el Número de Tarjeta / Lote</h4>
-                            <input type="text" value={numeroTarjeta} onChange={(e) => setNumeroTarjeta(e.target.value.toUpperCase())} required placeholder="Ej. T-1002" style={{ width: '100%', padding: '15px', borderRadius: '8px', backgroundColor: '#ffffff', color: '#333333', border: `1px solid ${TEMA.border}` }} />
-                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                              <button onClick={() => setPasoTrabajadora(3)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: TEMA.subtext, border: `1px solid ${TEMA.border}`, borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>⬅ Volver</button>
-                              <button onClick={() => setPasoTrabajadora(5)} disabled={!numeroTarjeta} style={{ flex: 2, padding: '12px', backgroundColor: numeroTarjeta ? TEMA.primary : TEMA.subtext, color: 'white', border: 'none', borderRadius: '8px', cursor: numeroTarjeta ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>Siguiente</button>
+                          <form onSubmit={handleGuardarProduccion}>
+                            <h4 style={{ textAlign: 'center', marginBottom: '20px', color: TEMA.text }}>
+                              4. Registro de Trabajo del Turno
+                            </h4>
+
+                            {/* Seleccionador Excluyente: Remetido vs Cantidad de Prendas */}
+                            <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', justifyContent: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => setTipoTejido('prendas')}
+                                style={{
+                                  flex: 1,
+                                  padding: '15px',
+                                  borderRadius: '10px',
+                                  border: `2px solid ${tipoTejido === 'prendas' ? TEMA.primary : TEMA.border}`,
+                                  backgroundColor: tipoTejido === 'prendas' ? TEMA.primary : TEMA.bg,
+                                  color: tipoTejido === 'prendas' ? '#FFFFFF' : TEMA.text,
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  fontSize: '15px'
+                                }}
+                              >
+                                👕 Prenda Tejida
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setTipoTejido('remetido')}
+                                style={{
+                                  flex: 1,
+                                  padding: '15px',
+                                  borderRadius: '10px',
+                                  border: `2px solid ${tipoTejido === 'remetido' ? TEMA.primary : TEMA.border}`,
+                                  backgroundColor: tipoTejido === 'remetido' ? TEMA.primary : TEMA.bg,
+                                  color: tipoTejido === 'remetido' ? '#FFFFFF' : TEMA.text,
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  fontSize: '15px'
+                                }}
+                              >
+                                🧵 Remetido Realizado
+                              </button>
                             </div>
-                          </div>
+
+                            {/* Condicional según opción seleccionada */}
+                            {tipoTejido === 'prendas' ? (
+                              <div style={{ backgroundColor: '#E3F2FD', padding: '25px', borderRadius: '12px', maxWidth: '400px', margin: '0 auto 25px auto' }}>
+                                <label style={{ display: 'block', marginBottom: '12px', color: '#1976D2', fontWeight: 'bold', textAlign: 'center' }}>
+                                  👕 Cantidad de Prendas Tejidas:
+                                </label>
+                                <input 
+                                  type="number" 
+                                  min="1" 
+                                  value={trabAprobadas} 
+                                  onChange={(e) => setTrabAprobadas(e.target.value)} 
+                                  required 
+                                  placeholder="Ej. 25" 
+                                  style={{ width: '100%', padding: '15px', borderRadius: '8px', textAlign: 'center', fontSize: '20px', backgroundColor: '#ffffff', color: '#333333', border: '1px solid #90CAF9', boxSizing: 'border-box' }} 
+                                />
+                              </div>
+                            ) : (
+                              <div style={{ backgroundColor: '#FFF3E0', padding: '25px', borderRadius: '12px', maxWidth: '400px', margin: '0 auto 25px auto', textAlign: 'center' }}>
+                                <p style={{ margin: 0, color: '#E65100', fontWeight: 'bold', fontSize: '16px' }}>
+                                  ✅ Se registrará que realizaste el <b>remetido</b> de esta prenda durante el turno.
+                                </p>
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', maxWidth: '400px', margin: '0 auto' }}>
+                              <button type="button" onClick={() => setPasoTrabajadora(3)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: TEMA.subtext, border: `2px solid ${TEMA.border}`, borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                                ⬅ Volver
+                              </button>
+                              <button type="submit" style={{ flex: 2, padding: '12px', backgroundColor: TEMA.primary, color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                                Guardar Producción
+                              </button>
+                            </div>
+                          </form>
                         ) : (
                           <>
                             <h4 style={{ marginBottom: '15px', color: TEMA.text }}>4. Selecciona la Combinación</h4>
@@ -1202,34 +1293,20 @@ useEffect(() => {
                       </div>
                     )}
 
-                    {/* PASO 5: TEJIDO (Cantidad y Fin) | ACABADO (Cantidad Acabada) */}
-                    {pasoTrabajadora === 5 && (
+                    {/* PASO 5: ACABADO (Cantidad Acabada) */}
+                    {pasoTrabajadora === 5 && !esTejido && (
                       <div>
-                        {esTejido ? (
-                          <form onSubmit={handleGuardarProduccion}>
-                            <h4 style={{ textAlign: 'center', marginBottom: '20px', color: TEMA.text }}>5. Ingresa la cantidad producida en tu turno</h4>
-                            <div style={{ backgroundColor: '#E3F2FD', padding: '25px', borderRadius: '12px', maxWidth: '400px', margin: '0 auto 25px auto' }}>
-                              <label style={{ display: 'block', marginBottom: '12px', color: '#1976D2', fontWeight: 'bold', textAlign: 'center' }}>👕 Cantidad Total Producida:</label>
-                              <input type="number" min="1" value={trabAprobadas} onChange={(e) => setTrabAprobadas(e.target.value)} required placeholder="Ej. 50" style={{ width: '100%', padding: '15px', borderRadius: '8px', textAlign: 'center', fontSize: '20px', backgroundColor: '#ffffff', color: '#333333', border: '1px solid #90CAF9' }} />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', maxWidth: '400px', margin: '0 auto' }}>
-                              <button type="button" onClick={() => setPasoTrabajadora(4)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: TEMA.subtext, border: `2px solid ${TEMA.border}`, borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>⬅ Volver</button>
-                              <button type="submit" style={{ flex: 2, padding: '12px', backgroundColor: TEMA.primary, color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Guardar Producción</button>
-                            </div>
-                          </form>
-                        ) : (
-                          <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-                            <h4 style={{ textAlign: 'center', marginBottom: '20px', color: TEMA.text }}>5. Ingresa la Cantidad Total Acabada</h4>
-                            <div style={{ backgroundColor: TEMA.bg, padding: '25px', borderRadius: '12px', border: `1px solid ${TEMA.border}` }}>
-                              <label style={{ display: 'block', marginBottom: '12px', color: TEMA.text, fontWeight: 'bold', textAlign: 'center' }}>📦 Cantidad Acabada:</label>
-                              <input type="number" min="1" value={cantidadAcabadaTotal} onChange={(e) => setCantidadAcabadaTotal(e.target.value)} required placeholder="Ej. 100" style={{ width: '100%', padding: '15px', borderRadius: '8px', textAlign: 'center', fontSize: '20px', backgroundColor: '#ffffff', color: '#333333', border: `1px solid ${TEMA.border}` }} />
-                            </div>
-                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                              <button onClick={() => setPasoTrabajadora(4)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: TEMA.subtext, border: `1px solid ${TEMA.border}`, borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>⬅ Volver</button>
-                              <button onClick={() => setPasoTrabajadora(6)} disabled={!cantidadAcabadaTotal} style={{ flex: 2, padding: '12px', backgroundColor: cantidadAcabadaTotal ? TEMA.primary : TEMA.subtext, color: 'white', border: 'none', borderRadius: '8px', cursor: cantidadAcabadaTotal ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>Siguiente</button>
-                            </div>
+                        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+                          <h4 style={{ textAlign: 'center', marginBottom: '20px', color: TEMA.text }}>5. Ingresa la Cantidad Total Acabada</h4>
+                          <div style={{ backgroundColor: TEMA.bg, padding: '25px', borderRadius: '12px', border: `1px solid ${TEMA.border}` }}>
+                            <label style={{ display: 'block', marginBottom: '12px', color: TEMA.text, fontWeight: 'bold', textAlign: 'center' }}>📦 Cantidad Acabada:</label>
+                            <input type="number" min="1" value={cantidadAcabadaTotal} onChange={(e) => setCantidadAcabadaTotal(e.target.value)} required placeholder="Ej. 100" style={{ width: '100%', padding: '15px', borderRadius: '8px', textAlign: 'center', fontSize: '20px', backgroundColor: '#ffffff', color: '#333333', border: `1px solid ${TEMA.border}` }} />
                           </div>
-                        )}
+                          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                            <button onClick={() => setPasoTrabajadora(4)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: TEMA.subtext, border: `1px solid ${TEMA.border}`, borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>⬅ Volver</button>
+                            <button onClick={() => setPasoTrabajadora(6)} disabled={!cantidadAcabadaTotal} style={{ flex: 2, padding: '12px', backgroundColor: cantidadAcabadaTotal ? TEMA.primary : TEMA.subtext, color: 'white', border: 'none', borderRadius: '8px', cursor: cantidadAcabadaTotal ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>Siguiente</button>
+                          </div>
+                        </div>
                       </div>
                     )}
 

@@ -396,7 +396,7 @@ useEffect(() => {
 
   const fetchLotesActivos = async () => {
     try {
-      const response = await fetch('${API_URL}/lotes_activos');
+      const response = await fetch(`${API_URL}/lotes_activos`);
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaLotes(datos.lotes_activos);
@@ -424,7 +424,7 @@ useEffect(() => {
     const esRemetido = esTejido && tipoTejido === 'remetido';
 
     try {
-      const response = await fetch('${API_URL}/registro_produccion', {
+      const response = await fetch(`${API_URL}/registro_produccion`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -465,7 +465,7 @@ useEffect(() => {
 
   const fetchDashboard = async () => {
     try {
-      const response = await fetch('${API_URL}/dashboard');
+      const response = await fetch(`${API_URL}/dashboard`);
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setDatosDashboard(datos.data);
@@ -477,7 +477,7 @@ useEffect(() => {
 
   const fetchOrdenesAnuales = async () => {
     try {
-      const response = await fetch('${API_URL}/orden_activa_detalle');
+      const response = await fetch(`${API_URL}/orden_activa_detalle`);
       const datos = await response.json();
       if (datos.estado === 'exito') {
         setListaOrdenesAnuales(datos.detalles_orden);
@@ -503,7 +503,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await fetch('${API_URL}/orden_activa_detalle', {
+      const response = await fetch(`${API_URL}/orden_activa_detalle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orden_id: ordenSeleccionada, metas: metasValidas }), 
@@ -982,21 +982,21 @@ useEffect(() => {
           </>
           )}
 
-          {/* === VISTA PRINCIPAL: DESEMPEÑO === */}
+{/* === VISTA PRINCIPAL: DESEMPEÑO === */}
           {rolActivo === 'Admin' && vistaPrincipalAdmin === 'desempeno' && (
-            <div style={{ backgroundColor: TEMA.card, padding: isMobile ? '20px' : '35px', borderRadius: '14px', boxShadow: '0 4px 15px rgba(43, 35, 37, 0.04)', border: `1px solid ${TEMA.border}`, marginBottom: '25px' }}>
+            <div style={{ backgroundColor: TEMA.card, padding: isMobile ? '20px' : '35px', borderRadius: '14px', boxShadow: '0 4px 15px rgba(43, 35, 37, 0.04)', border: `1px solid ${TEMA.border}`, marginBottom: '25px', boxSizing: 'border-box', overflow: 'hidden' }}>
               <h3 style={{ color: TEMA.primary, marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>📊 Tablero de Desempeño</h3>
               <p style={{ color: TEMA.subtext, marginBottom: '25px' }}>Monitoreo en tiempo real de la producción y rendimiento del personal.</p>
               
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '20px', width: '100%', boxSizing: 'border-box' }}>
   
                 {/* Cuadro 1: Producción Diaria Tejido */}
-                <div style={{ padding: '20px', backgroundColor: TEMA.bg, borderRadius: '12px', border: `1px solid ${TEMA.border}` }}>
+                <div style={{ padding: '20px', backgroundColor: TEMA.bg, borderRadius: '12px', border: `1px solid ${TEMA.border}`, boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 10px 0', color: TEMA.text, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     📅 Producción Diaria (Tejido)
                   </h4>
                   <p style={{ margin: 0, color: TEMA.subtext, fontSize: '14px' }}>Avance total de prendas tejidas en la jornada actual.</p>
-                  <div style={{ marginTop: '15px', padding: '20px', textAlign: 'center', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${TEMA.border}` }}>
+                  <div style={{ marginTop: '15px', padding: '20px', textAlign: 'center', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${TEMA.border}`, boxSizing: 'border-box' }}>
                     <h2 style={{ fontSize: '48px', color: TEMA.primary, margin: '10px 0' }}>
                       {datosDashboard.tejido_hoy}
                     </h2>
@@ -1005,13 +1005,13 @@ useEffect(() => {
                 </div>
 
                 {/* Cuadro 2: Producción Semanal Planta */}
-                <div style={{ padding: '20px', backgroundColor: TEMA.bg, borderRadius: '12px', border: `1px solid ${TEMA.border}` }}>
+                <div style={{ padding: '20px', backgroundColor: TEMA.bg, borderRadius: '12px', border: `1px solid ${TEMA.border}`, boxSizing: 'border-box' }}>
                   <h4 style={{ margin: '0 0 10px 0', color: TEMA.text, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     📈 Avance Semanal (Últimos 7 días)
                   </h4>
                   <p style={{ margin: 0, color: TEMA.subtext, fontSize: '14px' }}>Comparativa de producción por área.</p>
-                  <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${TEMA.border}` }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${TEMA.border}`, overflowX: 'auto', boxSizing: 'border-box' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '250px' }}>
                       <tbody>
                         {datosDashboard.avance_semanal.length > 0 ? datosDashboard.avance_semanal.map((item, idx) => (
                           <tr key={idx} style={{ borderBottom: idx === datosDashboard.avance_semanal.length - 1 ? 'none' : `1px solid ${TEMA.border}` }}>
@@ -1027,13 +1027,13 @@ useEffect(() => {
                 </div>
 
                 {/* Cuadro 3: Desempeño por Trabajadora */}
-                <div style={{ gridColumn: isMobile ? 'span 1' : 'span 2', padding: '20px', backgroundColor: TEMA.bg, borderRadius: '12px', border: `1px solid ${TEMA.border}` }}>
+                <div style={{ gridColumn: isMobile ? 'span 1' : 'span 2', padding: '20px', backgroundColor: TEMA.bg, borderRadius: '12px', border: `1px solid ${TEMA.border}`, boxSizing: 'border-box', overflow: 'hidden' }}>
                   <h4 style={{ margin: '0 0 10px 0', color: TEMA.text, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     👥 Rendimiento por Trabajadora
                   </h4>
                   <p style={{ margin: 0, color: TEMA.subtext, fontSize: '14px' }}>Detalle histórico de cantidades aprobadas y rechazadas.</p>
-                  <div style={{ marginTop: '15px', overflowX: 'auto', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${TEMA.border}` }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <div style={{ marginTop: '15px', overflowX: 'auto', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${TEMA.border}`, boxSizing: 'border-box' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '350px' }}>
                       <thead>
                         <tr style={{ backgroundColor: TEMA.bg, borderBottom: `2px solid ${TEMA.border}` }}>
                           <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Personal</th>
@@ -1059,7 +1059,7 @@ useEffect(() => {
               </div>
             </div>
           )}
-
+          
           {/* ================= VISTA TRABAJADORA: WIZARD DINÁMICO ================= */}
           {rolActivo === 'Trabajadora' && (
             <div style={{ backgroundColor: TEMA.card, padding: isMobile ? '20px' : '35px', borderRadius: '14px', boxShadow: '0 4px 15px rgba(43, 35, 37, 0.04)', border: `1px solid ${TEMA.border}` }}>

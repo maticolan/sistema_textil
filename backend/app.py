@@ -503,7 +503,7 @@ def crear_combinacion_prenda():
         except mysql.connector.IntegrityError:
             return jsonify({
                 "estado": "error",
-                "mensaje": "Error: Ya existe una combinación con ese nombre"
+                "mensaje": "Error: Ya existe este código para este modelo específico"
             }), 400
         except Exception as e:
             return jsonify({
@@ -827,12 +827,15 @@ def obtener_detalles_orden():
 
             # 2. Obtener los detalles de todas las órdenes activas
             query = """
-                SELECT op.orden_id, op.numero_orden, op.anio, l.cantidad_solici AS cantidad, c.nombre AS combinacion_nombre
+                SELECT op.orden_id, op.numero_orden, op.anio, l.cantidad_solici AS cantidad, 
+                       CONCAT(t.cod_prefijo, m.nombre, '-', c.nombre) AS combinacion_nombre
                 FROM lote l
                 JOIN orden_produccion op ON l.orden_id = op.orden_id
                 JOIN combinacion_prenda c ON l.combina_id = c.combina_id
+                JOIN modelo_prenda m ON c.modelo_id = m.modelo_id
+                JOIN tipo_prenda t ON m.tipo_id = t.tipo_id
                 WHERE op.estado = 'Activo'
-                ORDER BY op.numero_orden ASC, c.nombre ASC
+                ORDER BY op.numero_orden ASC, t.cod_prefijo ASC, m.nombre ASC, c.nombre ASC
             """
             cursor.execute(query)
             detalles = cursor.fetchall()

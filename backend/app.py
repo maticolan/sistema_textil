@@ -376,7 +376,8 @@ def obtener_modelos_prendas():
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
-                SELECT m.modelo_id, m.nombre AS modelo_nombre, m.tipo_id, t.nombre AS tipo_nombre
+                SELECT m.modelo_id, CONCAT(t.cod_prefijo, m.nombre) AS modelo_nombre, m.tipo_id, 
+                       CONCAT(t.nombre, ' - ', t.cod_prefijo) AS tipo_nombre
                 FROM modelo_prenda m
                 JOIN tipo_prenda t ON m.tipo_id = t.tipo_id
             """
@@ -451,7 +452,7 @@ def obtener_combinaciones_prendas():
         try:
             query = """
                 SELECT c.combina_id AS combinacion_id, c.nombre AS nombre, c.modelo_id, 
-                       m.nombre AS modelo_nombre, t.nombre AS tipo_nombre, t.cod_prefijo
+                       CONCAT(t.cod_prefijo, m.nombre) AS modelo_nombre, t.nombre AS tipo_nombre, t.cod_prefijo
                 FROM combinacion_prenda c
                 JOIN modelo_prenda m ON c.modelo_id = m.modelo_id
                 JOIN tipo_prenda t ON m.tipo_id = t.tipo_id

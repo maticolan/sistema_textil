@@ -786,7 +786,7 @@ useEffect(() => {
                     <select value={nuevoModeloTipoId} onChange={(e) => setNuevoModeloTipoId(e.target.value)} required style={{ width: '100%', padding: '10px', border: `1px solid ${TEMA.border}`, borderRadius: '8px', backgroundColor: TEMA.card, color: TEMA.text, boxSizing: 'border-box' }}>
                       <option value="">Seleccione un tipo...</option>
                       {listaTiposPrenda.map((tipo) => (
-                        <option key={tipo.tipo_id} value={tipo.tipo_id}>{tipo.nombre}</option>
+                        <option key={tipo.tipo_id} value={tipo.tipo_id}>{tipo.nombre} - {tipo.cod_prefijo}</option>
                       ))}
                     </select>
                   </div>
@@ -914,7 +914,7 @@ useEffect(() => {
                         <option value="">Seleccione una combinación...</option>
                         {listaCombinacionesPrenda.map((comb) => (
                           <option key={comb.combinacion_id} value={comb.combinacion_id}>
-                            {comb.cod_prefijo}{comb.modelo_nombre}-{comb.nombre}
+                            {comb.modelo_nombre}-{comb.nombre}
                           </option>
                         ))}
                       </select>

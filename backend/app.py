@@ -133,7 +133,7 @@ def obtener_usuarios():
     if conn and conn.is_connected():
         cursor = conn.cursor(dictionary=True)
         try:
-            query = "SELECT user_id, nombre, username, tipo, usuario_ingreso FROM usuario WHERE tipo = 'Trabajadora'"
+            query = "SELECT user_id, nombre, username, tipo, usuario_ingreso FROM usuario WHERE tipo = 'Trabajadora' ORDER BY nombre ASC"
             cursor.execute(query)
             usuarios = cursor.fetchall()
             return jsonify({
@@ -305,7 +305,7 @@ def obtener_tipos_prendas():
     if conn and conn.is_connected():
         cursor = conn.cursor(dictionary=True)
         try:
-            query = "SELECT tipo_id, nombre, cod_prefijo FROM tipo_prenda"
+            query = "SELECT tipo_id, nombre, cod_prefijo FROM tipo_prenda ORDER BY cod_prefijo ASC"
             cursor.execute(query)
             tipos = cursor.fetchall()
             return jsonify({
@@ -380,6 +380,7 @@ def obtener_modelos_prendas():
                        CONCAT(t.nombre, ' - ', t.cod_prefijo) AS tipo_nombre
                 FROM modelo_prenda m
                 JOIN tipo_prenda t ON m.tipo_id = t.tipo_id
+                ORDER BY t.cod_prefijo ASC, m.nombre ASC
             """
             cursor.execute(query)
             modelos = cursor.fetchall()
@@ -456,6 +457,7 @@ def obtener_combinaciones_prendas():
                 FROM combinacion_prenda c
                 JOIN modelo_prenda m ON c.modelo_id = m.modelo_id
                 JOIN tipo_prenda t ON m.tipo_id = t.tipo_id
+                ORDER BY t.cod_prefijo ASC, m.nombre ASC, c.nombre ASC
             """
             cursor.execute(query)
             combinaciones = cursor.fetchall()

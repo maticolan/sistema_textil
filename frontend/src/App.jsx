@@ -747,15 +747,15 @@ useEffect(() => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
                     <thead>
                       <tr style={{ backgroundColor: TEMA.bg, borderBottom: `2px solid ${TEMA.border}` }}>
-                        <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Tipo de Prenda</th>
                         <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600', width: '30%' }}>Prefijo</th>
+                        <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Tipo de Prenda</th>
                       </tr>
                     </thead>
                     <tbody>
                       {listaTiposPrenda.map((tipo) => (
                         <tr key={tipo.tipo_id} style={{ borderBottom: `1px solid ${TEMA.border}` }}>
-                          <td style={{ padding: '12px' }}>{tipo.nombre}</td>
                           <td style={{ padding: '12px', fontWeight: 'bold' }}>{tipo.cod_prefijo}</td>
+                          <td style={{ padding: '12px' }}>{tipo.nombre}</td>
                         </tr>
                       ))}
                       {listaTiposPrenda.length === 0 && (
@@ -804,15 +804,15 @@ useEffect(() => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '500px' }}>
                     <thead>
                       <tr style={{ backgroundColor: TEMA.bg, borderBottom: `2px solid ${TEMA.border}` }}>
-                        <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Nombre del Modelo</th>
                         <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Tipo de Prenda</th>
+                        <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Nombre del Modelo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {listaModelosPrenda.map((mod) => (
                         <tr key={mod.modelo_id} style={{ borderBottom: `1px solid ${TEMA.border}` }}>
-                          <td style={{ padding: '12px', fontWeight: '500' }}>{mod.modelo_nombre}</td>
                           <td style={{ padding: '12px' }}>{mod.tipo_nombre}</td>
+                          <td style={{ padding: '12px', fontWeight: '500' }}>{mod.modelo_nombre}</td>
                         </tr>
                       ))}
                       {listaModelosPrenda.length === 0 && (
@@ -861,17 +861,17 @@ useEffect(() => {
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '400px' }}>
                     <thead>
                       <tr style={{ backgroundColor: TEMA.bg, borderBottom: `2px solid ${TEMA.border}` }}>
-                        <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Nombre / Código</th>
                         <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Modelo de Prenda</th>
+                        <th style={{ padding: '12px', color: TEMA.subtext, fontWeight: '600' }}>Nombre / Código</th>
                       </tr>
                     </thead>
                     <tbody>
                       {listaCombinacionesPrenda.map((comb) => (
                         <tr key={comb.combinacion_id} style={{ borderBottom: `1px solid ${TEMA.border}` }}>
+                          <td style={{ padding: '12px' }}>{comb.modelo_nombre}</td>
                           <td style={{ padding: '12px', fontWeight: '500' }}>
                             {comb.nombre}
                           </td>
-                          <td style={{ padding: '12px' }}>{comb.modelo_nombre}</td>
                         </tr>
                       ))}
                       {listaCombinacionesPrenda.length === 0 && (
